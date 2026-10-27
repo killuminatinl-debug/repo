@@ -1,22 +1,24 @@
-# Chathype Avatar Studio v3
+# Chathype Avatar Studio v3 — CodyChat 11
 
-Volledig nieuwe implementatie in een aparte map; geen code uit de eerdere avatar-addon hergebruikt.
+Een zelfstandige avatarbouwer met live preview, huidskleur, kapsels, kleding, accessoires, opslaan, herstellen en een beheerpaneel. Gericht op PHP 7.4+ en MySQL/MariaDB.
 
-## Bestanden
-- addon.php: spelersinterface voor CodyChat-addonvenster
-- system/bootstrap.php: database-/sessie-aansluiting en beveiliging
-- system/schema.sql: databaseschema
-- system/api.php: JSON-acties met CSRF en server-side validatie
-- system/install.php: tabellen installeren
-- system/admin.php: beheerinterface
-- assets/avatar-studio.css en assets/avatar-studio.js: eigen interface
+## Installatie in CodyChat
 
-## Installatie
-1. Maak eerst een back-up van chat en database.
-2. Plaats deze map in de projectmap.
-3. Controleer in system/bootstrap.php de CodyChat-bootstrap-paden.
-4. Voer system/install.php één keer uit als beheerder en blokkeer/verwijder daarna dat installatiebestand.
-5. Voeg addon.php toe aan de modal/route van CodyChat.
-6. Controleer schrijfrechten voor avatarbestanden als je later bestandsuitvoer toevoegt.
+1. Maak een back-up van je chatbestanden en database.
+2. Download deze map en plaats **de map `Chathype-Avatar-Studio-v3` ongewijzigd** in de hoofdmap van je CodyChat-installatie onder `addons/Chathype-Avatar-Studio-v3/`.
+3. Activeer de addon via de CodyChat-addonmanager als jouw installatie een handmatige addonregistratie ondersteunt. De updater `updater/data.php` maakt de tabellen automatisch aan wanneer CodyChat deze updater uitvoert.
+4. Koppel `files/entry.php` aan de addon/modal-route van CodyChat. Open `addon.php` alleen als losse test-/weergavepagina vanuit een ingelogde chat-sessie.
+5. Controleer dat PHP schrijfrechten heeft op `addons/Chathype-Avatar-Studio-v3/generated/` (de map wordt bij het eerste opslaan aangemaakt).
+6. Open de studio als speler, sla een avatar op en controleer dat `boom_users.user_tumb` wordt bijgewerkt. De addon schrijft het avatarpad naar het bestaande CodyChat-profiel en probeert daarna `redisUpdateUser()` aan te roepen als die functie bestaat.
+7. Open `system/admin.php` via een ingelogde beheerderssessie voor instellingen.
 
-CodyChat-installaties verschillen door aangepaste paden en loaders. De code kan daarom niet eerlijk als live-getest op jouw chat worden aangemerkt zonder toegang tot jouw installatie en database.
+## Belangrijk over profielweergave
+
+De avatar wordt gekoppeld via `boom_users.user_tumb`, de avatarveldnaam die in CodyChat 11 wordt gebruikt. De uiteindelijke zichtbaarheid kan ook afhangen van jouw aangepaste profieltemplate, CDN/cache of de gebruikte afbeeldingsproxy. Deze repository is niet verbonden met jouw live database/server; daarom kan ik niet beweren dat jouw specifieke host al live is getest.
+
+## Technische details
+
+- PHP 7.4-syntaxis; MySQL/MariaDB en mysqli.
+- CSRF-controle op bewerkingen, allowlist-validatie van avataropties en prepared statements.
+- Uninstall is niet-destructief: spelerinstellingen en back-ups worden niet automatisch verwijderd.
+- Als je de map hernoemt, moeten de asset/API-paden en de mapnaam in `system/api.php` gelijk worden aangepast.

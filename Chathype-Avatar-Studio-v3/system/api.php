@@ -38,13 +38,25 @@ if($action==='save'){
  $svg='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" rx="34" fill="'.$bg.'"/>'.$shirtSvg.'<path d="M139 190 L139 226 Q160 245 181 226 L181 190Z" fill="'.$skin.'"/><ellipse cx="160" cy="135" rx="'.$rx.'" ry="77" fill="'.$skin.'"/>'.$hairSvg.$eyeSvg.'<path d="M142 177 Q160 190 178 177" stroke="#8d4e51" stroke-width="4" fill="none" stroke-linecap="round"/>'.$acc.'</svg>';
  if(@file_put_contents($full,$svg,LOCK_EX)===false)avatarV3Json(array('ok'=>false,'error'=>'Avatarbestand kon niet worden aangemaakt.'),500);
  $relative='addons/Chathype-Avatar-Studio-v3/generated/'.$file;
+ // Keep the path relative to the chat root, as CodyChat stores user_tumb paths.
+ // The generated SVG is served as an ordinary image; no inline SVG is injected into profile HTML.
  $s=$db->prepare('INSERT IGNORE INTO chathype_avatar_v3_backups(user_id,original_avatar,addon_avatar) VALUES(?,?,?)');$s->bind_param('iss',$user,$currentAvatar,$relative);$s->execute();$s->close();
  $s=$db->prepare('UPDATE boom_users SET user_tumb=? WHERE user_id=?');$s->bind_param('si',$relative,$user);$ok=$s->execute();$s->close();
  if(!$ok){@unlink($full);avatarV3Json(array('ok'=>false,'error'=>'Avatarinstellingen konden niet aan je chatprofiel worden gekoppeld.'),500);}
  $s=$db->prepare('INSERT INTO chathype_avatar_v3_profiles (user_id,avatar_json,generated_file) VALUES (?,?,?) ON DUPLICATE KEY UPDATE avatar_json=VALUES(avatar_json),generated_file=VALUES(generated_file),updated_at=CURRENT_TIMESTAMP');$s->bind_param('iss',$user,$json,$relative);
  if(!$s->execute()){$s->close();avatarV3Json(array('ok'=>false,'error'=>'Avatar is gekoppeld, maar instellingen konden niet worden opgeslagen.'),500);}$s->close();
  if(function_exists('redisUpdateUser')){try{redisUpdateUser($user);}catch(Throwable $e){}}
- avatarV3Json(array('ok'=>true,'message'=>'Avatar opgeslagen en gekoppeld aan je chatprofiel.','config'=>$cfg));
+ // Return the exact profile image URL so the editor can update the preview immediately.
+ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+ $host = isset($_SERVER['HTTP_HOST']) ? preg_replace('/[^a-zA-Z0-9.\-:\[\]]/', '', $_SERVER['HTTP_HOST']) : '';
+ $base = rtrim(str_replace('\\\\','/', dirname(isset($_SERVER['SCRIPT_NAME']) ? dirname($_SERVER['SCRIPT_NAME']) : '/')), '/');
+ // API is /addons/<folder>/system/api.php; derive chat root URL without hard-coding domain.
+ $scriptPath = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\\\','/', $_SERVER['SCRIPT_NAME']) : '';
+ $marker = '/addons/Chathype-Avatar-Studio-v3/system/api.php';
+ $pos = strpos($scriptPath, $marker);
+ $rootUrl = $pos === false ? '' : substr($scriptPath, 0, $pos);
+ $avatarUrl = $scheme.'://'.$host.$rootUrl.'/'.$relative;
+ avatarV3Json(array('ok'=>true,'message'=>'Avatar opgeslagen en gekoppeld aan je chatprofiel.','config'=>$cfg,'avatar_url'=>$avatarUrl));
 }
 if($action==='restore'){
  if(avatarV3Setting('allow_restore','1')!=='1')avatarV3Json(array('ok'=>false,'error'=>'Herstellen is uitgeschakeld.'),403);

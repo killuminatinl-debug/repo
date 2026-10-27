@@ -1,7 +1,15 @@
 <?php
 if (!defined('CHATHYPE_AVATAR_STUDIO')) define('CHATHYPE_AVATAR_STUDIO', true);
 if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
-$root = dirname(__DIR__, 2);
+/* Find CodyChat root without assuming whether this addon is nested in addons/. */
+$root = dirname(__DIR__);
+for ($i = 0; $i < 6; $i++) {
+    if (is_file($root . '/system/config_session.php') || is_file($root . '/system/database.php')) break;
+    $parent = dirname($root);
+    if ($parent === $root) break;
+    $root = $parent;
+}
+if (!defined('CHATHYPE_AVATAR_V3_CHAT_ROOT')) define('CHATHYPE_AVATAR_V3_CHAT_ROOT', $root);
 foreach (array($root . '/system/config_session.php', $root . '/system/database.php') as $file) {
     if (is_file($file)) require_once $file;
 }
